@@ -1,0 +1,49 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# BÉNIN FONCIER — Cloudflare Pages _headers
+# Projet : admin.beninfoncier.bj (panel administrateur)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Ce fichier est déployé dans un projet Cloudflare Pages SÉPARÉ,
+# lié au sous-domaine admin.beninfoncier.bj.
+# CSP plus stricte : pas de FedaPay, pas de Tailwind CDN.
+#
+# AVANT DE DÉPLOYER — Désactiver dans Cloudflare Dashboard :
+#   Speed → Optimization → Rocket Loader       → OFF
+#   Speed → Optimization → Auto Minify JS/HTML → OFF
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+/*
+  # ── Clickjacking — protection renforcée pour l'admin ─────────────────────────
+  X-Frame-Options: DENY
+
+  # ── MIME sniffing ────────────────────────────────────────────────────────────
+  X-Content-Type-Options: nosniff
+
+  # ── HTTPS 2 ans ──────────────────────────────────────────────────────────────
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+  # ── Référents ────────────────────────────────────────────────────────────────
+  Referrer-Policy: no-referrer
+
+  # ── Permissions — admin : tout désactivé sauf ce qui est strictement utile ───
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), bluetooth=()
+
+  # ── CSP admin — périmètre réduit ─────────────────────────────────────────────
+  #
+  # Scripts  : cdn.jsdelivr.net (Supabase JS + Lucide)
+  #            unpkg.com (Lucide fallback)
+  #            static.cloudflareinsights.com (CF Analytics)
+  # Styles   : fonts.googleapis.com · cdn.jsdelivr.net (inline styles présents)
+  # Fonts    : fonts.gstatic.com
+  # Connect  : *.supabase.co uniquement (REST + Auth + Realtime)
+  # Frames   : none — aucun iframe autorisé sur l'admin
+  #
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net unpkg.com static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdn.jsdelivr.net; font-src 'self' fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data:; frame-src 'none'; form-action 'self'; base-uri 'self'; upgrade-insecure-requests
+
+  # ── Cache — jamais de cache sur l'admin ──────────────────────────────────────
+  Cache-Control: no-store, no-cache, must-revalidate, private
+
+  # ── Header Cloudflare spécifique — désactiver le cache CF sur l'admin ────────
+  # (Cloudflare respecte le Cache-Control: no-store, mais ce header renforce)
+  Surrogate-Control: no-store

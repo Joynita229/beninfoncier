@@ -1,0 +1,18 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# BÉNIN FONCIER — Cloudflare Pages _redirects
+# ══════════════════════════════════════════════════════════════════════════════
+# Format : /source  /destination  code
+# 301 = permanent | 302 = temporaire | 200 = rewrite (SPA)
+
+# ── Forcer HTTPS (Cloudflare le fait au niveau proxy, redondance utile)
+http://beninfoncier.bj/*  https://beninfoncier.bj/:splat  301
+
+# ── Rediriger www vers apex
+https://www.beninfoncier.bj/*  https://beninfoncier.bj/:splat  301
+
+# ── Pages legacy / anciennes URLs
+/accueil   /   302
+/home      /   302
+
+# ── Catch-all SPA (si migration vers SPA ultérieure)
+# /*  /index.html  200

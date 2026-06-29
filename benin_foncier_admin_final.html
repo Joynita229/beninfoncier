@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<!-- Bénin Foncier Admin v1.0 | SIPI-AFRIK | by TECH+ -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bénin Foncier · Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════ */
+:root {
+  --green:    #008751;
+  --green-d:  #006b40;
+  --green-l:  #e6f4ef;
+  --gold:     #c9a227;
+  --gold-l:   #fdf6e3;
+  --navy:     #0a1628;
+  --navy-mid: #132040;
+  --navy-l:   #1e3059;
+  --red:      #ef4444;
+  --red-l:    #fef2f2;
+  --amber:    #f59e0b;
+  --amber-l:  #fffbeb;
+  --slate:    #64748b;
+  --slate-l:  #f8fafc;
+  --white:    #ffffff;
+  --bg:       #f0f4f8;
+  --border:   #e2e8f0;
+  --text:     #1e293b;
+  --text-2:   #475569;
+  --sidebar-w: 240px;
+  --header-h:  60px;
+  --radius:    10px;
+  --shadow:    0 1px 3px rgba(0,0,0,.07), 0 4px 12px rgba(0,0,0,.05);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; }
+
+/* ══════════════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════════════ */
+#login-screen {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-l) 100%);
+}
+.login-card {
+  background:var(--white); border-radius:16px; padding:2.5rem 2rem; width:100%; max-width:400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+.login-logo { display:flex; align-items:center; gap:.6rem; margin-bottom:1.5rem; }
+.login-logo-icon {
+  width:42px; height:42px; background:var(--green); border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+}
+.login-logo-icon svg { width:22px; height:22px; color:white; stroke:white; }
+.login-logo-text { font-weight:900; font-size:1.2rem; color:var(--green); line-height:1; }
+.login-logo-sub { font-size:.7rem; color:var(--slate); font-weight:500; }
+.login-title { font-size:1.3rem; font-weight:800; color:var(--text); margin-bottom:.3rem; }
+.login-sub { font-size:.82rem; color:var(--slate); margin-bottom:1.5rem; }
+.form-group { margin-bottom:1rem; }
+.form-label { display:block; font-size:.78rem; font-weight:700; color:var(--text-2); margin-bottom:.35rem; text-transform:uppercase; letter-spacing:.04em; }
+.form-input {
+  width:100%; padding:.65rem .85rem; border:1.5px solid var(--border); border-radius:var(--radius);
+  font-family:inherit; font-size:.88rem; color:var(--text); background:var(--slate-l);
+  transition:border-color .2s;
+}
+.form-input:focus { outline:none; border-color:var(--green); background:white; }
+.form-hint { font-size:.72rem; color:var(--slate); margin-top:.3rem; }
+.btn-login {
+  width:100%; padding:.75rem; background:var(--green); color:white; border:none;
+  border-radius:var(--radius); font-family:inherit; font-size:.92rem; font-weight:700;
+  cursor:pointer; transition:background .2s; margin-top:.5rem;
+}
+.btn-login:hover { background:var(--green-d); }
+.login-error { display:none; background:var(--red-l); color:var(--red); font-size:.82rem; font-weight:600; padding:.6rem .85rem; border-radius:8px; margin-bottom:1rem; }
+.login-divider { border:none; border-top:1px solid var(--border); margin:1.25rem 0; }
+
+/* ══════════════════════════════════════════════
+   APP LAYOUT
+══════════════════════════════════════════════ */
+#admin-app { display:none; min-height:100vh; }
+.layout { display:flex; min-height:100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width:var(--sidebar-w); background:var(--navy); color:white;
+  display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh;
+  z-index:100; overflow-y:auto; flex-shrink:0;
+}
+.sidebar-header { padding:1.25rem 1rem 1rem; border-bottom:1px solid rgba(255,255,255,.08); }
+.sidebar-logo { display:flex; align-items:center; gap:.6rem; }
+.sidebar-logo-icon {
+  width:36px; height:36px; background:var(--green); border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.sidebar-logo-icon svg { width:18px; height:18px; color:white; stroke:white; }
+.sidebar-logo-text { font-weight:900; font-size:1rem; color:white; line-height:1.1; }
+.sidebar-logo-badge {
+  display:inline-block; font-size:.6rem; font-weight:800; background:var(--gold);
+  color:var(--navy); padding:1px 6px; border-radius:20px; margin-top:2px; letter-spacing:.05em;
+}
+.sidebar-nav { flex:1; padding:.75rem 0; }
+.nav-section { padding:.5rem 1rem .25rem; font-size:.65rem; font-weight:800; color:rgba(255,255,255,.35); text-transform:uppercase; letter-spacing:.08em; }
+.nav-item {
+  display:flex; align-items:center; gap:.65rem; padding:.6rem 1rem;
+  cursor:pointer; color:rgba(255,255,255,.65); font-size:.84rem; font-weight:500;
+  transition:all .15s; border-left:3px solid transparent; margin:.05rem 0;
+}
+.nav-item:hover { color:white; background:rgba(255,255,255,.05); }
+.nav-item.active { color:white; background:rgba(0,135,81,.2); border-left-color:var(--green); font-weight:700; }
+.nav-item svg { width:16px; height:16px; flex-shrink:0; }
+.nav-badge {
+  margin-left:auto; background:var(--red); color:white;
+  font-size:.65rem; font-weight:800; padding:1px 7px; border-radius:20px; min-width:18px; text-align:center;
+}
+.nav-badge.green { background:var(--green); }
+.sidebar-footer { padding:1rem; border-top:1px solid rgba(255,255,255,.08); }
+.sidebar-user { display:flex; align-items:center; gap:.6rem; }
+.sidebar-avatar {
+  width:32px; height:32px; background:var(--green); border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.8rem;
+}
+.sidebar-user-name { font-size:.8rem; font-weight:700; color:white; }
+.sidebar-user-role { font-size:.68rem; color:rgba(255,255,255,.5); }
+.btn-logout { display:flex; align-items:center; gap:.4rem; margin-top:.6rem; color:rgba(255,255,255,.5); font-size:.75rem; cursor:pointer; font-weight:600; transition:color .2s; }
+.btn-logout:hover { color:var(--red); }
+
+/* MAIN */
+.main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; }
+.top-bar {
+  height:var(--header-h); background:white; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 1.5rem; position:sticky; top:0; z-index:50;
+  box-shadow: 0 1px 0 var(--border);
+}
+.top-bar-title { font-size:1rem; font-weight:800; color:var(--text); }
+.top-bar-right { display:flex; align-items:center; gap:.75rem; }
+.status-dot {
+  display:flex; align-items:center; gap:.4rem; font-size:.75rem; font-weight:600;
+  color:var(--green); background:var(--green-l); padding:.3rem .7rem; border-radius:20px;
+}
+.status-dot::before { content:''; width:7px; height:7px; background:var(--green); border-radius:50%; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.content { padding:1.5rem; flex:1; }
+
+/* ══════════════════════════════════════════════
+   PANELS
+══════════════════════════════════════════════ */
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* CARDS */
+.card { background:white; border-radius:var(--radius); box-shadow:var(--shadow); padding:1.25rem; }
+.card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+.card-title { font-size:.92rem; font-weight:800; color:var(--text); }
+.card-sub { font-size:.75rem; color:var(--slate); margin-top:.15rem; }
+.section-title { font-size:1.05rem; font-weight:800; color:var(--text); margin-bottom:1rem; }
+
+/* KPI GRID */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+.kpi-card {
+  background:white; border-radius:var(--radius); padding:1.1rem 1.25rem;
+  box-shadow:var(--shadow); display:flex; flex-direction:column; gap:.35rem; position:relative; overflow:hidden;
+}
+.kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.kpi-card.green::before { background:var(--green); }
+.kpi-card.gold::before { background:var(--gold); }
+.kpi-card.navy::before { background:var(--navy-l); }
+.kpi-card.red::before { background:var(--red); }
+.kpi-card.amber::before { background:var(--amber); }
+.kpi-label { font-size:.72rem; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:.05em; }
+.kpi-value { font-size:1.7rem; font-weight:900; color:var(--text); line-height:1; }
+.kpi-sub { font-size:.72rem; color:var(--slate); }
+.kpi-icon { position:absolute; top:.9rem; right:1rem; opacity:.12; }
+.kpi-icon svg { width:36px; height:36px; }
+
+/* TABLES */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:.83rem; }
+thead tr { border-bottom:2px solid var(--border); }
+th { padding:.65rem .85rem; text-align:left; font-size:.7rem; font-weight:800; color:var(--slate); text-transform:uppercase; letter-spacing:.06em; white-space:nowrap; }
+td { padding:.65rem .85rem; color:var(--text-2); border-bottom:1px solid var(--border); vertical-align:middle; }
+tr:hover td { background:var(--slate-l); }
+tr:last-child td { border-bottom:none; }
+
+/* BADGES */
+.badge {
+  display:inline-flex; align-items:center; gap:.3rem;
+  padding:.2rem .6rem; border-radius:20px; font-size:.7rem; font-weight:800; white-space:nowrap;
+}
+.badge-green { background:var(--green-l); color:var(--green-d); }
+.badge-gold { background:var(--gold-l); color:#92650a; }
+.badge-red { background:var(--red-l); color:var(--red); }
+.badge-amber { background:var(--amber-l); color:#92650a; }
+.badge-navy { background:#eff6ff; color:var(--navy-l); }
+.badge-slate { background:#f1f5f9; color:var(--slate); }
+
+/* BUTTONS */
+.btn { display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .9rem; border-radius:8px; font-family:inherit; font-size:.8rem; font-weight:700; cursor:pointer; border:none; transition:all .15s; }
+.btn svg { width:14px; height:14px; }
+.btn-primary { background:var(--green); color:white; }
+.btn-primary:hover { background:var(--green-d); }
+.btn-danger { background:var(--red-l); color:var(--red); }
+.btn-danger:hover { background:var(--red); color:white; }
+.btn-outline { background:transparent; color:var(--text-2); border:1.5px solid var(--border); }
+.btn-outline:hover { background:var(--slate-l); }
+.btn-gold { background:var(--gold); color:white; }
+.btn-gold:hover { background:#a8821d; }
+.btn-sm { padding:.3rem .65rem; font-size:.75rem; }
+
+/* TOOLBAR */
+.toolbar { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; flex-wrap:wrap; }
+.search-box {
+  display:flex; align-items:center; gap:.5rem; background:white; border:1.5px solid var(--border);
+  border-radius:8px; padding:.4rem .75rem; flex:1; min-width:200px; max-width:360px;
+}
+.search-box svg { width:15px; height:15px; color:var(--slate); flex-shrink:0; }
+.search-box input { border:none; outline:none; font-family:inherit; font-size:.84rem; color:var(--text); width:100%; background:transparent; }
+.filter-select {
+  padding:.4rem .75rem; border:1.5px solid var(--border); border-radius:8px;
+  font-family:inherit; font-size:.82rem; color:var(--text-2); background:white; cursor:pointer;
+}
+
+/* GRID 2COL */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+
+/* FORMS */
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+.form-row-3 { grid-template-columns:1fr 1fr 1fr; }
+.form-group-inline { margin-bottom:1rem; }
+.form-group-inline label { display:block; font-size:.76rem; font-weight:700; color:var(--text-2); margin-bottom:.3rem; text-transform:uppercase; letter-spacing:.04em; }
+.form-group-inline input, .form-group-inline select, .form-group-inline textarea {
+  width:100%; padding:.55rem .75rem; border:1.5px solid var(--border); border-radius:8px;
+  font-family:inherit; font-size:.84rem; color:var(--text); background:var(--slate-l); transition:border-color .2s;
+}
+.form-group-inline input:focus, .form-group-inline select:focus, .form-group-inline textarea:focus {
+  outline:none; border-color:var(--green); background:white;
+}
+.form-group-inline textarea { resize:vertical; min-height:80px; }
+
+/* TOAST */
+#toast {
+  position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999;
+  background:var(--text); color:white; padding:.75rem 1.1rem; border-radius:10px;
+  font-size:.84rem; font-weight:600; box-shadow:0 4px 20px rgba(0,0,0,.2);
+  transform:translateY(100px); opacity:0; transition:all .3s; display:flex; align-items:center; gap:.5rem;
+}
+#toast.show { transform:translateY(0); opacity:1; }
+#toast.success { background:var(--green); }
+#toast.error { background:var(--red); }
+#toast.warning { background:var(--amber); color:var(--text); }
+
+/* MODAL */
+.modal-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500;
+  align-items:center; justify-content:center; padding:1rem;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:white; border-radius:16px; width:100%; max-width:520px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3); overflow:hidden;
+}
+.modal-header { padding:1.2rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.modal-title { font-size:.95rem; font-weight:800; color:var(--text); }
+.modal-close { cursor:pointer; color:var(--slate); transition:color .15s; }
+.modal-close:hover { color:var(--red); }
+.modal-close svg { width:18px; height:18px; }
+.modal-body { padding:1.5rem; }
+.modal-footer { padding:1rem 1.5rem; border-top:1px solid var(--border); display:flex; gap:.75rem; justify-content:flex-end; }
+
+/* SQL BLOCK */
+.sql-block {
+  background:#0f172a; color:#a5f3b5; font-family:'Courier New',monospace;
+  font-size:.78rem; padding:1rem; border-radius:8px; line-height:1.6;
+  overflow-x:auto; white-space:pre; margin:.75rem 0;
+}
+
+/* EMPTY STATE */
+.empty-state { text-align:center; padding:3rem 1rem; color:var(--slate); }
+.empty-state svg { width:40px; height:40px; margin:0 auto .75rem; opacity:.3; }
+.empty-state-title { font-size:.9rem; font-weight:700; color:var(--text-2); margin-bottom:.35rem; }
+.empty-state-sub { font-size:.8rem; }
+
+/* SETUP BANNER */
+.setup-banner {
+  background:linear-gradient(135deg,var(--amber-l),#fff8e6); border:1.5px solid var(--amber);
+  border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem;
+  display:flex; align-items:flex-start; gap:.75rem;
+}
+.setup-banner svg { width:20px; height:20px; color:var(--amber); flex-shrink:0; margin-top:2px; }
+.setup-banner-title { font-size:.84rem; font-weight:800; color:#92650a; }
+.setup-banner-text { font-size:.78rem; color:#78540a; line-height:1.5; margin-top:.2rem; }
+
+/* PLAN BADGE */
+.plan-free   { background:#f1f5f9; color:var(--slate); }
+.plan-solo   { background:#eff6ff; color:#1d4ed8; }
+.plan-expert { background:var(--green-l); color:var(--green-d); }
+.plan-elite  { background:var(--gold-l); color:#92650a; }
+
+/* RESPONSIVE */
+@media(max-width:768px) {
+  :root { --sidebar-w:0px; }
+  .sidebar { transform:translateX(-240px); transition:transform .3s; width:240px; }
+  .sidebar.open { transform:translateX(0); }
+  .main { margin-left:0; }
+  .grid-2, .grid-3 { grid-template-columns:1fr; }
+  .form-row { grid-template-columns:1fr; }
+}
+
+/* ACTIVITY ITEM */
+.activity-item { display:flex; gap:.75rem; align-items:flex-start; padding:.6rem 0; border-bottom:1px solid var(--border); }
+.activity-item:last-child { border-bottom:none; }
+.activity-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.activity-icon svg { width:15px; height:15px; }
+.activity-text { font-size:.82rem; font-weight:600; color:var(--text); }
+.activity-sub { font-size:.74rem; color:var(--slate); margin-top:.1rem; }
+.activity-time { font-size:.72rem; color:var(--slate); white-space:nowrap; margin-left:auto; padding-top:.15rem; }
+
+/* CONFIG */
+.config-section { margin-bottom:1.75rem; }
+.config-section-title {
+  font-size:.78rem; font-weight:800; color:var(--slate); text-transform:uppercase;
+  letter-spacing:.06em; padding-bottom:.5rem; border-bottom:1px solid var(--border); margin-bottom:1rem;
+}
+
+/* TOGGLE */
+.toggle-wrap { display:flex; align-items:center; justify-content:space-between; padding:.6rem 0; border-bottom:1px solid var(--border); }
+.toggle-wrap:last-child { border-bottom:none; }
+.toggle-label { font-size:.84rem; font-weight:600; color:var(--text); }
+.toggle-sub { font-size:.74rem; color:var(--slate); }
+.toggle { width:42px; height:24px; background:var(--border); border-radius:20px; position:relative; cursor:pointer; transition:background .2s; flex-shrink:0; }
+.toggle.on { background:var(--green); }
+.toggle::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; background:white; border-radius:50%; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.toggle.on::after { left:21px; }
+
+/* CHART BAR */
+.mini-chart { display:flex; align-items:flex-end; gap:4px; height:50px; }
+.mini-bar { flex:1; background:var(--green-l); border-radius:3px 3px 0 0; transition:background .2s; min-width:6px; }
+.mini-bar:hover { background:var(--green); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LOGIN SCREEN ═══════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div>
+        <div class="login-logo-text">Bénin Foncier</div>
+        <div class="login-logo-sub">Administration · SIPI-AFRIK</div>
+      </div>
+    </div>
+    <div class="login-title">Espace Administrateur</div>
+    <div class="login-sub">Accès réservé — admin.beninfoncier.bj</div>
+    <div class="login-error" id="login-error">Identifiants incorrects ou accès non autorisé.</div>
+    <div class="form-group">
+      <label class="form-label">Adresse e-mail</label>
+      <input class="form-input" id="inp-email" type="email" placeholder="admin@beninfoncier.bj" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input class="form-input" id="inp-pass" type="password" placeholder="••••••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">
+      Accéder au panneau d'administration →
+    </button>
+    <div style="margin-top:1rem;font-size:.74rem;color:var(--slate);text-align:center;">
+      🔒 Authentification Supabase · Session sécurisée
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ADMIN APP ═══════════ -->
+<div id="admin-app">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+          <div>
+            <div class="sidebar-logo-text">Bénin Foncier</div>
+            <div><span class="sidebar-logo-badge">ADMIN</span></div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">Principal</div>
+        <div class="nav-item active" onclick="showPanel('dashboard')" id="nav-dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Tableau de bord
+        </div>
+        <div class="nav-item" onclick="showPanel('documents')" id="nav-documents">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Documents
+          <span class="nav-badge" id="nb-docs">0</span>
+        </div>
+        <div class="nav-item" onclick="showPanel('annonces')" id="nav-annonces">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+          Annonces &amp; Vendeurs
+        </div>
+        <div class="nav-item" onclick="showPanel('abonnements')" id="nav-abonnements">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Abonnements
+        </div>
+
+        <div class="nav-section">Activité</div>
+        <div class="nav-item" onclick="showPanel('affilies')" id="nav-affilies">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          Affiliés
+        </div>
+        <div class="nav-item" onclick="showPanel('rif')" id="nav-rif">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Dossiers RIF
+          <span class="nav-badge" id="nb-rif">0</span>
+        </div>
+        <div class="nav-item" onclick="showPanel('blog')" id="nav-blog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Blog
+        </div>
+
+        <div class="nav-section">Système</div>
+        <div class="nav-item" onclick="showPanel('config')" id="nav-config">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Configuration
+        </div>
+        <div class="nav-item" onclick="showPanel('sql')" id="nav-sql">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          Setup SQL
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar">A</div>
+          <div>
+            <div class="sidebar-user-name">Administrateur</div>
+            <div class="sidebar-user-role">SIPI-AFRIK · TECH+</div>
+          </div>
+        </div>
+        <div class="btn-logout" onclick="doLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Déconnexion
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <header class="top-bar">
+        <div class="top-bar-title" id="top-bar-title">Tableau de bord</div>
+        <div class="top-bar-right">
+          <div class="status-dot" id="conn-status">Connecté à Supabase</div>
+          <button class="btn btn-outline btn-sm" onclick="refreshAll()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1.85-8.36L1 10"/></svg>
+            Actualiser
+          </button>
+        </div>
+      </header>
+
+      <div class="content">
+
+        <!-- ══ PANEL : DASHBOARD ══ -->
+        <div class="panel active" id="panel-dashboard">
+          <div class="kpi-grid">
+            <div class="kpi-card green">
+              <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+              <div class="kpi-label">Documents total</div>
+              <div class="kpi-value" id="kpi-docs">—</div>
+              <div class="kpi-sub">mandats, compromis, RIF</div>
+            </div>
+            <div class="kpi-card gold">
+              <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+              <div class="kpi-label">Docs certifiés</div>
+              <div class="kpi-value" id="kpi-certified">—</div>
+              <div class="kpi-sub">is_certified = true</div>
+            </div>
+            <div class="kpi-card navy">
+              <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></div>
+              <div class="kpi-label">Vendeurs (table)</div>
+              <div class="kpi-value" id="kpi-vendors">—</div>
+              <div class="kpi-sub">inscrits via OTP</div>
+            </div>
+            <div class="kpi-card amber">
+              <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="11" cy="11" r="8"/></svg></div>
+              <div class="kpi-label">Dossiers RIF</div>
+              <div class="kpi-value" id="kpi-rif">—</div>
+              <div class="kpi-sub">soumis ce mois</div>
+            </div>
+            <div class="kpi-card red">
+              <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+              <div class="kpi-label">Affiliés actifs</div>
+              <div class="kpi-value" id="kpi-affilies">—</div>
+              <div class="kpi-sub">code actif ce mois</div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap:1.25rem;">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Documents récents</div>
+                  <div class="card-sub">Derniers 5 générés sur la plateforme</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="showPanel('documents')">Tout voir</button>
+              </div>
+              <div id="recent-docs-list">
+                <div class="empty-state">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+                  <div class="empty-state-title">Chargement…</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Activité récente</div>
+                  <div class="card-sub">Actions sur la plateforme</div>
+                </div>
+              </div>
+              <div id="activity-list">
+                <div class="activity-item">
+                  <div class="activity-icon" style="background:var(--green-l);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+                  <div><div class="activity-text">Admin connecté</div><div class="activity-sub">Session démarrée</div></div>
+                  <div class="activity-time" id="activity-login-time">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:1.25rem;">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Répartition des documents par type</div>
+                <div class="card-sub">Mandats · Compromis · RIF</div>
+              </div>
+            </div>
+            <div id="type-breakdown" style="display:flex;gap:1rem;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;"><span style="width:12px;height:12px;background:var(--green);border-radius:3px;display:inline-block;"></span><span id="cnt-mandat">mandat : 0</span></div>
+              <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;"><span style="width:12px;height:12px;background:var(--navy-l);border-radius:3px;display:inline-block;"></span><span id="cnt-compromis">compromis : 0</span></div>
+              <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;"><span style="width:12px;height:12px;background:var(--amber);border-radius:3px;display:inline-block;"></span><span id="cnt-rif">rif : 0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL : DOCUMENTS ══ -->
+        <div class="panel" id="panel-documents">
+          <div class="toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="doc-search" placeholder="Rechercher par téléphone, type, titre…" oninput="filterDocs()">
+            </div>
+            <select class="filter-select" id="doc-type-filter" onchange="filterDocs()">
+              <option value="">Tous les types</option>
+              <option value="mandat">Mandats</option>
+              <option value="compromis">Compromis</option>
+              <option value="rif">RIF</option>
+            </select>
+            <select class="filter-select" id="doc-cert-filter" onchange="filterDocs()">
+              <option value="">Toute certification</option>
+              <option value="true">Certifiés</option>
+              <option value="false">Non certifiés</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="loadDocuments()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1.85-8.36L1 10"/></svg>
+              Actualiser
+            </button>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Réf.</th>
+                    <th>Type</th>
+                    <th>Titre</th>
+                    <th>Téléphone</th>
+                    <th>Montant</th>
+                    <th>Certifié</th>
+                    <th>Créé le</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="docs-table-body">
+                  <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--slate);">Chargement des documents…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="docs-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0 0;font-size:.8rem;color:var(--slate);">
+              <span id="docs-count-label">— documents</span>
+              <div style="display:flex;gap:.5rem;">
+                <button class="btn btn-outline btn-sm" id="doc-prev" onclick="docsPage(-1)">← Préc.</button>
+                <button class="btn btn-outline btn-sm" id="doc-next" onclick="docsPage(1)">Suiv. →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL : ANNONCES & VENDEURS ══ -->
+        <div class="panel" id="panel-annonces">
+          <div class="setup-banner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+              <div class="setup-banner-title">Table bf_vendors requise</div>
+              <div class="setup-banner-text">Pour gérer les vendeurs centralement, créez la table <strong>bf_vendors</strong> dans Supabase (voir onglet Setup SQL). Les données seront synchronisées à l'inscription OTP.</div>
+            </div>
+          </div>
+          <div class="toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="vendor-search" placeholder="Téléphone, nom, email…" oninput="filterVendors()">
+            </div>
+            <select class="filter-select" id="vendor-plan-filter" onchange="filterVendors()">
+              <option value="">Tous les plans</option>
+              <option value="free">FREE</option>
+              <option value="solo">SOLO</option>
+              <option value="expert">EXPERT</option>
+              <option value="elite">ÉLITE</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="loadVendors()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1.85-8.36L1 10"/></svg>
+              Actualiser
+            </button>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Téléphone</th>
+                    <th>Nom</th>
+                    <th>Plan actuel</th>
+                    <th>Expiration</th>
+                    <th>KYC</th>
+                    <th>Inscrit le</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="vendors-table-body">
+                  <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--slate);">Chargement des vendeurs…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL : ABONNEMENTS ══ -->
+        <div class="panel" id="panel-abonnements">
+          <div class="grid-2" style="margin-bottom:1.25rem;">
+            <div class="card" style="border-top:3px solid var(--slate);">
+              <div class="kpi-label" style="margin-bottom:.3rem;">FREE</div>
+              <div class="kpi-value" id="cnt-plan-free">—</div>
+              <div class="kpi-sub">vendeurs sans abonnement</div>
+            </div>
+            <div class="card" style="border-top:3px solid #1976d2;">
+              <div class="kpi-label" style="margin-bottom:.3rem;">SOLO · 25 000 F/mois</div>
+              <div class="kpi-value" id="cnt-plan-solo">—</div>
+              <div class="kpi-sub" id="rev-solo">0 F/mois</div>
+            </div>
+            <div class="card" style="border-top:3px solid var(--green);">
+              <div class="kpi-label" style="margin-bottom:.3rem;">EXPERT · 50 000 F/mois</div>
+              <div class="kpi-value" id="cnt-plan-expert">—</div>
+              <div class="kpi-sub" id="rev-expert">0 F/mois</div>
+            </div>
+            <div class="card" style="border-top:3px solid var(--gold);">
+              <div class="kpi-label" style="margin-bottom:.3rem;">ÉLITE · 75 000 F/mois</div>
+              <div class="kpi-value" id="cnt-plan-elite">—</div>
+              <div class="kpi-sub" id="rev-elite">0 F/mois</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Modifier le plan d'un vendeur</div>
+                <div class="card-sub">Override manuel — utile pour corrections, tests ou cadeaux</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group-inline">
+                <label>Téléphone vendeur</label>
+                <input type="tel" id="plan-phone" placeholder="22900000000">
+              </div>
+              <div class="form-group-inline">
+                <label>Nouveau plan</label>
+                <select id="plan-new">
+                  <option value="free">FREE</option>
+                  <option value="solo">SOLO</option>
+                  <option value="expert">EXPERT</option>
+                  <option value="elite">ÉLITE</option>
+                </select>
+              </div>
+              <div class="form-group-inline">
+                <label>Expiration</label>
+                <input type="date" id="plan-expiry">
+              </div>
+            </div>
+            <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="overridePlan()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Appliquer le plan
+              </button>
+              <span style="font-size:.78rem;color:var(--slate);">Met à jour la table bf_vendors + envoie notification WhatsApp optionnelle</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL : AFFILIÉS ══ -->
+        <div class="panel" id="panel-affilies">
+          <div class="setup-banner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+              <div class="setup-banner-title">Table bf_affiliates requise</div>
+              <div class="setup-banner-text">Créez la table <strong>bf_affiliates</strong> dans Supabase pour tracker les codes, clics et commissions en temps réel (voir Setup SQL).</div>
+            </div>
+          </div>
+          <div class="toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="affil-search" placeholder="Code, téléphone…" oninput="filterAffiliates()">
+            </div>
+            <select class="filter-select" id="affil-status-filter" onchange="filterAffiliates()">
+              <option value="">Tous statuts</option>
+              <option value="pending">Commission en attente</option>
+              <option value="paid">Payé</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="loadAffiliates()">Actualiser</button>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Téléphone</th>
+                    <th>Conversions</th>
+                    <th>Commission due</th>
+                    <th>Commission payée</th>
+                    <th>Statut KYC</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="affiliates-table-body">
+                  <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--slate);">Chargement des affiliés…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card" style="margin-top:1.25rem;">
+            <div class="card-header">
+              <div class="card-title">Marquer une commission comme payée</div>
+            </div>
+            <div class="form-row" style="align-items:flex-end;">
+              <div class="form-group-inline">
+                <label>Code affilié</label>
+                <input type="text" id="affil-pay-code" placeholder="BF-XXXXX">
+              </div>
+              <div class="form-group-inline">
+                <label>Montant payé (F CFA)</label>
+                <input type="number" id="affil-pay-amount" placeholder="5000">
+              </div>
+              <div>
+                <button class="btn btn-gold" onclick="markCommissionPaid()">Marquer payé</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL : RIF ══ -->
+        <div class="panel" id="panel-rif">
+          <div class="toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="rif-search" placeholder="Réf, téléphone, zone…" oninput="filterRIF()">
+            </div>
+            <select class="filter-select" id="rif-status-filter" onchange="filterRIF()">
+              <option value="">Tous statuts</option>
+              <option value="pending">En attente</option>
+              <option value="processing">En traitement</option>
+              <option value="done">Livré</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="loadRIF()">Actualiser</button>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Réf.</th>
+                    <th>Type</th>
+                    <th>Demandeur</th>
+                    <th>Zone / Parcelle</th>
+                    <th>Montant</th>
+                    <th>Statut</th>
+                    <th>Soumis le</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="rif-table-body">
+                  <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--slate);">Chargement des dossiers RIF…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL : BLOG ══ -->
+        <div class="panel" id="panel-blog">
+          <div class="toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="blog-search" placeholder="Titre, catégorie…" oninput="filterBlog()">
+            </div>
+            <button class="btn btn-primary" onclick="openBlogModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nouvel article
+            </button>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Titre</th>
+                    <th>Catégorie</th>
+                    <th>Auteur</th>
+                    <th>Statut</th>
+                    <th>Publié le</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="blog-table-body">
+                  <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--slate);">Chargement des articles…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL : CONFIGURATION ══ -->
+        <div class="panel" id="panel-config">
+          <div class="grid-2" style="gap:1.25rem;">
+            <div class="card">
+              <div class="config-section-title" style="margin-bottom:1rem;">Connexion Supabase</div>
+              <div class="setup-banner" style="margin-bottom:1rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <div>
+                  <div class="setup-banner-title">Clés soudées côté serveur</div>
+                  <div class="setup-banner-text">Les clés Supabase ne sont plus saisies dans l'interface. Elles sont définies directement dans le code source (<code>SUPABASE_URL</code> / <code>SUPABASE_ANON_KEY</code>) avant déploiement.<br><br>Sur <strong>Netlify/Vercel</strong> : Settings → Environment Variables.<br>La <strong>Service Role Key</strong> ne doit jamais apparaître dans ce fichier.</div>
+                </div>
+              </div>
+              <div style="background:var(--slate-l);border:1.5px solid var(--border);border-radius:8px;padding:.75rem 1rem;font-size:.82rem;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:.4rem;">
+                  <span style="font-weight:700;color:var(--text-2);">Project URL</span>
+                  <code id="display-url" style="color:var(--green);font-size:.78rem;"></code>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                  <span style="font-weight:700;color:var(--text-2);">Anon Key</span>
+                  <span style="color:var(--slate);font-size:.78rem;">••••••••••••••••••••</span>
+                </div>
+              </div>
+              <script>
+                (function(){ const el=document.getElementById('display-url'); if(el) el.textContent=SUPABASE_URL; })();
+              </script>
+            </div>
+
+            <div class="card">
+              <div class="config-section-title" style="margin-bottom:1rem;">Paramètres plateforme</div>
+              <div class="form-group-inline">
+                <label>Clé publique FedaPay</label>
+                <input type="text" id="cfg-fedapay" placeholder="pk_live_…">
+              </div>
+              <div class="form-group-inline">
+                <label>Numéro WhatsApp SIPI-AFRIK</label>
+                <input type="tel" id="cfg-wa" placeholder="+22900000000">
+              </div>
+              <div class="form-group-inline">
+                <label>Mode FedaPay</label>
+                <select id="cfg-fed-mode">
+                  <option value="live">Production (live)</option>
+                  <option value="sandbox">Sandbox (test)</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="savePlatformConfig()">Enregistrer</button>
+            </div>
+
+            <div class="card">
+              <div class="config-section-title" style="margin-bottom:1rem;">Sécurité admin</div>
+              <div class="form-group-inline">
+                <label>Nouveau mot de passe</label>
+                <input type="password" id="cfg-newpass" placeholder="Min. 12 caractères">
+              </div>
+              <div class="form-group-inline">
+                <label>Confirmer</label>
+                <input type="password" id="cfg-newpass2" placeholder="Confirmer le mot de passe">
+              </div>
+              <button class="btn btn-primary" onclick="changeAdminPass()">Changer le mot de passe</button>
+              <div style="margin-top:.6rem;font-size:.74rem;color:var(--slate);">Modifie le mot de passe via Supabase Auth (supabase.auth.updateUser).</div>
+              <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+                <div class="toggle-wrap">
+                  <div><div class="toggle-label">Session timeout (8h)</div><div class="toggle-sub">Déconnexion auto après inactivité</div></div>
+                  <div class="toggle on" id="tgl-timeout" onclick="toggleThis('tgl-timeout')"></div>
+                </div>
+                <div class="toggle-wrap">
+                  <div><div class="toggle-label">Log des connexions admin</div><div class="toggle-sub">Enregistrer les accès dans bf_admin_log</div></div>
+                  <div class="toggle on" id="tgl-log" onclick="toggleThis('tgl-log')"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="config-section-title" style="margin-bottom:1rem;">Plans tarifaires</div>
+              <table>
+                <thead><tr><th>Plan</th><th>Prix/mois</th><th>Max annonces</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="badge plan-free">FREE</span></td><td>0 F</td><td>5</td></tr>
+                  <tr><td><span class="badge plan-solo">SOLO</span></td><td>25 000 F</td><td>∞</td></tr>
+                  <tr><td><span class="badge plan-expert">EXPERT</span></td><td>50 000 F</td><td>∞</td></tr>
+                  <tr><td><span class="badge plan-elite">ÉLITE</span></td><td>75 000 F</td><td>∞</td></tr>
+                </tbody>
+              </table>
+              <div style="margin-top:.75rem;font-size:.76rem;color:var(--slate);">Pour modifier les tarifs, éditez directement benin_foncier_admin.html — section PLANS.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ PANEL : SETUP SQL ══ -->
+        <div class="panel" id="panel-sql">
+          <div class="setup-banner" style="background:linear-gradient(135deg,#eff6ff,#e0f2fe);border-color:#60a5fa;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <div>
+              <div class="setup-banner-title" style="color:#1e40af;">Instructions de déploiement</div>
+              <div class="setup-banner-text" style="color:#1e3a8a;">Copiez-collez ces scripts dans Supabase → SQL Editor → New Query. Exécutez dans l'ordre indiqué. Commencez par ⓪ (table profiles) si elle n'existe pas encore.</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:1.25rem;border:2px solid var(--green);">
+            <div class="card-title" style="margin-bottom:.5rem;">⓪ Table profiles — Rôles utilisateurs <span class="badge badge-green" style="margin-left:.5rem;">REQUIS EN PREMIER</span></div>
+            <div class="card-sub" style="margin-bottom:.75rem;">Crée la table profiles liée à auth.users et ajoute la colonne role. Nécessaire pour le verrouillage par rôle de l'interface admin.</div>
+            <div class="sql-block">-- 1. Créer la table profiles (si elle n'existe pas)
+CREATE TABLE IF NOT EXISTS profiles (
+  id          uuid REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  name        text,
+  role        text NOT NULL DEFAULT 'user',  -- 'user' | 'vendor' | 'admin'
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+
+-- 2. Activer RLS
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- 3. Chaque utilisateur peut lire son propre profil
+CREATE POLICY "User read own profile"
+  ON profiles FOR SELECT
+  USING (auth.uid() = id);
+
+-- 4. Les admins ont accès complet
+CREATE POLICY "Admin full access on profiles"
+  ON profiles
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles p2
+      WHERE p2.id = auth.uid() AND p2.role = 'admin'
+    )
+  );
+
+-- 5. Créer automatiquement un profil à l'inscription
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO profiles (id, name, role)
+  VALUES (NEW.id, NEW.raw_user_meta_data->>'name', 'user')
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE handle_new_user();
+
+-- 6. Promouvoir un utilisateur en admin (remplacez l'UUID)
+-- UPDATE profiles SET role = 'admin' WHERE id = 'UUID_DE_VOTRE_COMPTE_ADMIN';</div>
+            <button class="btn btn-primary btn-sm" onclick="copySQL('sql-profiles')">Copier</button>
+          </div>
+
+          <div class="card" style="margin-bottom:1.25rem;">
+            <div class="card-title" style="margin-bottom:.5rem;">① Table bf_vendors — Gestion des vendeurs</div>
+            <div class="card-sub" style="margin-bottom:.75rem;">Synchronisée à l'inscription OTP de chaque vendeur</div>
+            <div class="sql-block">CREATE TABLE IF NOT EXISTS bf_vendors (
+  id          uuid    DEFAULT gen_random_uuid() PRIMARY KEY,
+  phone       text    NOT NULL UNIQUE,
+  name        text,
+  email       text,
+  plan        text    DEFAULT 'free',
+  plan_expires_at timestamptz,
+  kyc_status  text    DEFAULT 'pending',  -- pending | verified | rejected
+  status      text    DEFAULT 'active',   -- active | suspended
+  affiliate_code text,
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+ALTER TABLE bf_vendors ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin full access" ON bf_vendors USING (true);</div>
+            <button class="btn btn-outline btn-sm" onclick="copySQL('sql-vendors')">Copier</button>
+          </div>
+
+          <div class="card" style="margin-bottom:1.25rem;">
+            <div class="card-title" style="margin-bottom:.5rem;">② Table bf_affiliates — Programme de parrainage</div>
+            <div class="card-sub" style="margin-bottom:.75rem;">Codes affiliés, clics, conversions et commissions</div>
+            <div class="sql-block">CREATE TABLE IF NOT EXISTS bf_affiliates (
+  id                uuid    DEFAULT gen_random_uuid() PRIMARY KEY,
+  code              text    NOT NULL UNIQUE,
+  phone             text    NOT NULL,
+  name              text,
+  clicks            int     DEFAULT 0,
+  conversions       int     DEFAULT 0,
+  commission_pending int    DEFAULT 0,
+  commission_paid   int     DEFAULT 0,
+  kyc_status        text    DEFAULT 'pending',
+  status            text    DEFAULT 'active',
+  created_at        timestamptz DEFAULT now()
+);
+ALTER TABLE bf_affiliates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin full access" ON bf_affiliates USING (true);</div>
+            <button class="btn btn-outline btn-sm" onclick="copySQL('sql-affiliates')">Copier</button>
+          </div>
+
+          <div class="card" style="margin-bottom:1.25rem;">
+            <div class="card-title" style="margin-bottom:.5rem;">③ Table bf_rif_requests — Dossiers RIF</div>
+            <div class="card-sub" style="margin-bottom:.75rem;">Rapports d'inspection foncière soumis via la plateforme</div>
+            <div class="sql-block">CREATE TABLE IF NOT EXISTS bf_rif_requests (
+  id          uuid    DEFAULT gen_random_uuid() PRIMARY KEY,
+  ref         text    NOT NULL,
+  type        text,                        -- standard | express
+  phone       text    NOT NULL,
+  zone        text,
+  parcelle    text,
+  coordgps    text,
+  montant     int     DEFAULT 0,
+  status      text    DEFAULT 'pending',   -- pending | processing | done
+  rapport_url text,
+  notes       text,
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+ALTER TABLE bf_rif_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin full access" ON bf_rif_requests USING (true);</div>
+            <button class="btn btn-outline btn-sm" onclick="copySQL('sql-rif')">Copier</button>
+          </div>
+
+          <div class="card" style="margin-bottom:1.25rem;">
+            <div class="card-title" style="margin-bottom:.5rem;">④ Table bf_blog — Articles du blog</div>
+            <div class="card-sub" style="margin-bottom:.75rem;">Gestion des articles publiés sur la plateforme</div>
+            <div class="sql-block">CREATE TABLE IF NOT EXISTS bf_blog (
+  id          uuid    DEFAULT gen_random_uuid() PRIMARY KEY,
+  titre       text    NOT NULL,
+  categorie   text,
+  auteur      text    DEFAULT 'SIPI-AFRIK',
+  extrait     text,
+  contenu     text,
+  image_url   text,
+  slug        text    UNIQUE,
+  status      text    DEFAULT 'draft',     -- draft | published
+  published_at timestamptz,
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+ALTER TABLE bf_blog ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin full access" ON bf_blog USING (true);
+CREATE POLICY "Public read" ON bf_blog FOR SELECT USING (status = 'published');</div>
+            <button class="btn btn-outline btn-sm" onclick="copySQL('sql-blog')">Copier</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="margin-bottom:.5rem;">⑤ Table bf_admin_log — Journal des actions admin</div>
+            <div class="card-sub" style="margin-bottom:.75rem;">Traçabilité des actions sensibles (RGPD / APDP)</div>
+            <div class="sql-block">CREATE TABLE IF NOT EXISTS bf_admin_log (
+  id          uuid    DEFAULT gen_random_uuid() PRIMARY KEY,
+  action      text    NOT NULL,
+  target_id   text,
+  target_type text,
+  details     jsonb,
+  ip          text,
+  created_at  timestamptz DEFAULT now()
+);
+ALTER TABLE bf_admin_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin full access" ON bf_admin_log USING (true);</div>
+            <button class="btn btn-outline btn-sm" onclick="copySQL('sql-log')">Copier</button>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /main -->
+  </div><!-- /layout -->
+</div><!-- /admin-app -->
+
+<!-- MODAL DOCUMENT DETAIL -->
+<div class="modal-overlay" id="modal-doc">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Détail du document</div>
+      <div class="modal-close" onclick="closeModal('modal-doc')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    <div class="modal-body" id="modal-doc-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="modal-doc-delete-btn">Supprimer</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-doc')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VENDEUR DETAIL -->
+<div class="modal-overlay" id="modal-vendor">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Profil vendeur</div>
+      <div class="modal-close" onclick="closeModal('modal-vendor')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    <div class="modal-body" id="modal-vendor-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="modal-vendor-suspend-btn">Suspendre</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-vendor')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BLOG -->
+<div class="modal-overlay" id="modal-blog">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <div class="modal-title" id="blog-modal-title">Nouvel article</div>
+      <div class="modal-close" onclick="closeModal('modal-blog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="blog-edit-id">
+      <div class="form-row">
+        <div class="form-group-inline">
+          <label>Titre</label>
+          <input type="text" id="blog-titre" placeholder="Titre de l'article">
+        </div>
+        <div class="form-group-inline">
+          <label>Catégorie</label>
+          <select id="blog-cat">
+            <option value="marche">Marché</option>
+            <option value="juridique">Juridique</option>
+            <option value="conseil">Conseil</option>
+            <option value="affiliation">Affiliation</option>
+            <option value="actualite">Actualité</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group-inline">
+        <label>Extrait (accroche)</label>
+        <textarea id="blog-extrait" rows="2" placeholder="Résumé court visible en liste…"></textarea>
+      </div>
+      <div class="form-group-inline">
+        <label>Contenu (HTML ou texte)</label>
+        <textarea id="blog-contenu" rows="6" placeholder="Contenu complet de l'article…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group-inline">
+          <label>Auteur</label>
+          <input type="text" id="blog-auteur" value="SIPI-AFRIK">
+        </div>
+        <div class="form-group-inline">
+          <label>Statut</label>
+          <select id="blog-status">
+            <option value="draft">Brouillon</option>
+            <option value="published">Publié</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveBlogArticle()">Enregistrer</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-blog')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RIF STATUS -->
+<div class="modal-overlay" id="modal-rif-status">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Mettre à jour le dossier RIF</div>
+      <div class="modal-close" onclick="closeModal('modal-rif-status')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rif-edit-id">
+      <div class="form-group-inline">
+        <label>Statut</label>
+        <select id="rif-new-status">
+          <option value="pending">En attente</option>
+          <option value="processing">En traitement</option>
+          <option value="done">Livré</option>
+        </select>
+      </div>
+      <div class="form-group-inline">
+        <label>URL du rapport (optionnel)</label>
+        <input type="url" id="rif-rapport-url" placeholder="https://…">
+      </div>
+      <div class="form-group-inline">
+        <label>Notes internes</label>
+        <textarea id="rif-notes" rows="3" placeholder="Remarques, problèmes, etc."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveRIFStatus()">Mettre à jour</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-rif-status')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════ JAVASCRIPT ═══════════ -->
+<script>
+// ── SEC-009 : Logs désactivés en production ─────────────────────────
+    var DEBUG = false;
+    if (!DEBUG) { var _noop = function(){}; console.log = console.debug = console.info = _noop; }
+    // ─────────────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════
+// ⚙️  VARIABLES D'ENVIRONNEMENT — À CONFIGURER AVANT DÉPLOIEMENT
+// Sur Vercel/Netlify : Settings → Environment Variables
+// Dans ce fichier : remplacez uniquement les deux valeurs ci-dessous
+// ⚠️  Ne jamais mettre la Service Role Key ici — uniquement la clé ANON (publique)
+// ══════════════════════════════════════════
+const SUPABASE_URL      = 'https://hxlvnugizveizonemjrr.supabase.co';   // ← Remplacer
+const SUPABASE_ANON_KEY = 'sb_publishable_eeTWJFl0ssr6lTOYOg3pDg_VCxymNe_';        // ← Remplacer (anon/public uniquement)
+
+// Client Supabase (anon key — sécurisé pour le front)
+const { createClient } = window.supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Session courante (remplie après signInWithPassword)
+let currentSession = null;
+
+const SESSION_KEY = 'bf_admin_session'; // conservé pour compatibilité logout legacy
+
+let allDocs      = [];
+let allVendors   = [];
+let allAffiliates= [];
+let allRIF       = [];
+let allBlog      = [];
+let docsPage_    = 0;
+const PAGE_SIZE  = 20;
+
+// ══════════════════════════════════════════
+// INIT — Vérification de session Supabase au chargement
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    // Vérifier le rôle même sur session restaurée
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', session.user.id).single();
+    if (profile?.role === 'admin') {
+      currentSession = session;
+      showApp(session.user);
+      return;
+    } else {
+      await sb.auth.signOut();
+    }
+  }
+  document.getElementById('login-screen').style.display = 'flex';
+  if (window.lucide) lucide.createIcons();
+
+  // Touche Entrée sur le formulaire
+  document.getElementById('inp-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('inp-email').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+});
+
+// ══════════════════════════════════════════
+// AUTH — Connexion sécurisée (Supabase Auth + vérification rôle)
+// ══════════════════════════════════════════
+async function doLogin() {
+  const email    = document.getElementById('inp-email').value.trim();
+  const password = document.getElementById('inp-pass').value;
+  const err      = document.getElementById('login-error');
+  const btn      = document.getElementById('btn-login');
+  err.style.display = 'none';
+
+  if (!email || !password) {
+    err.textContent = 'Veuillez saisir votre e-mail et votre mot de passe.';
+    err.style.display = 'block';
+    return;
+  }
+
+  // SEC-002 : Rate limiting admin (10 min, 5 tentatives)
+  var _bfAdm = JSON.parse(sessionStorage.getItem('bf_admin') || '{"n":0,"ts":0}');
+  var _bfAdmWin = 600000;
+  if (_bfAdm.ts && Date.now()-_bfAdm.ts < _bfAdmWin && _bfAdm.n >= 5) {
+    var _rem = Math.ceil((_bfAdmWin-(Date.now()-_bfAdm.ts))/60000);
+    err.textContent = 'Compte verrouillé. Réessayez dans '+_rem+' min.';
+    err.style.display='block'; return;
+  }
+
+  btn.textContent = 'Vérification…';
+  btn.disabled = true;
+
+  try {
+    // Étape 1 — Authentification Supabase Auth
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      if (!_bfAdm.ts || Date.now()-_bfAdm.ts > _bfAdmWin) { _bfAdm.ts=Date.now(); _bfAdm.n=0; }
+      _bfAdm.n++; sessionStorage.setItem('bf_admin', JSON.stringify(_bfAdm));
+      err.textContent = 'Identifiants incorrects. ('+_bfAdm.n+'/5 tentatives)';
+      err.style.display = 'block'; return;
+    }
+
+    // Étape 2 — Vérification du rôle dans la table profiles
+    const { data: profile, error: roleErr } = await sb
+      .from('profiles')
+      .select('role, name')
+      .eq('id', data.user.id)
+      .single();
+
+    if (roleErr || profile?.role !== 'admin') {
+      await sb.auth.signOut();
+      err.textContent = 'Accès restreint aux administrateurs. Votre compte n\'a pas les droits requis.';
+      err.style.display = 'block';
+      return;
+    }
+
+    // Accès autorisé — reset brute force
+    sessionStorage.removeItem('bf_admin');
+    currentSession = data.session;
+    showApp(data.user, profile);
+
+  } catch (e) {
+    err.textContent = 'Erreur réseau : ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.textContent = 'Accéder au panneau d\'administration →';
+    btn.disabled = false;
+  }
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  currentSession = null;
+  sessionStorage.removeItem(SESSION_KEY);
+  document.getElementById('admin-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('inp-pass').value = '';
+}
+
+function showApp(user, profile) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-app').style.display = 'block';
+  document.getElementById('activity-login-time').textContent = new Date().toLocaleTimeString('fr-FR');
+  // Afficher l'email de l'admin connecté dans la sidebar
+  if (user) {
+    const nameEl = document.querySelector('.sidebar-user-name');
+    const roleEl = document.querySelector('.sidebar-user-role');
+    const avatarEl = document.querySelector('.sidebar-avatar');
+    if (nameEl) nameEl.textContent = profile?.name || user.email?.split('@')[0] || 'Admin';
+    if (roleEl) roleEl.textContent = user.email || 'admin@beninfoncier.bj';
+    if (avatarEl) avatarEl.textContent = (profile?.name || user.email || 'A')[0].toUpperCase();
+  }
+  if (window.lucide) lucide.createIcons();
+  loadDashboard();
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+const PANELS = ['dashboard','documents','annonces','abonnements','affilies','rif','blog','config','sql'];
+const TITLES = {
+  dashboard:'Tableau de bord', documents:'Documents', annonces:'Annonces & Vendeurs',
+  abonnements:'Abonnements & Plans', affilies:'Programme Affiliés', rif:'Dossiers RIF',
+  blog:'Gestion Blog', config:'Configuration', sql:'Setup SQL'
+};
+
+function showPanel(id) {
+  PANELS.forEach(p => {
+    document.getElementById('panel-'+p).classList.remove('active');
+    const nav = document.getElementById('nav-'+p);
+    if (nav) nav.classList.remove('active');
+  });
+  document.getElementById('panel-'+id).classList.add('active');
+  const nav = document.getElementById('nav-'+id);
+  if (nav) nav.classList.add('active');
+  document.getElementById('top-bar-title').textContent = TITLES[id] || id;
+  // Load data on first visit
+  const loaders = {
+    documents: loadDocuments, annonces: loadVendors, abonnements: loadVendors,
+    affilies: loadAffiliates, rif: loadRIF, blog: loadBlog
+  };
+  if (loaders[id]) loaders[id]();
+}
+
+// ══════════════════════════════════════════
+// SUPABASE HELPERS
+// ══════════════════════════════════════════
+function sbHeaders() {
+  // Utilise le token de session Supabase Auth — jamais la service_role key
+  const token = currentSession?.access_token || SUPABASE_ANON_KEY;
+  return {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+}
+
+async function sbGet(table, params='') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers: sbHeaders() });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+async function sbPost(table, body) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method:'POST', headers: sbHeaders(), body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+async function sbPatch(table, filter, body) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+    method:'PATCH', headers: sbHeaders(), body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+async function sbDelete(table, filter) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+    method:'DELETE', headers: sbHeaders()
+  });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return true;
+}
+
+function checkConn(ok) {
+  const el = document.getElementById('conn-status');
+  el.textContent = ok ? 'Connecté à Supabase' : 'Erreur Supabase';
+  el.style.background = ok ? '' : 'var(--red-l)';
+  el.style.color = ok ? '' : 'var(--red)';
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    const docs = await sbGet('bf_documents', 'select=*&order=created_at.desc&limit=200');
+    checkConn(true);
+    allDocs = docs;
+    document.getElementById('kpi-docs').textContent = docs.length;
+    const cert = docs.filter(d => d.is_certified).length;
+    document.getElementById('kpi-certified').textContent = cert;
+    // Badge count
+    document.getElementById('nb-docs').textContent = docs.length;
+    // Type breakdown
+    const byType = {};
+    docs.forEach(d => { byType[d.type] = (byType[d.type]||0) + 1; });
+    document.getElementById('cnt-mandat').textContent = `mandat : ${byType.mandat||0}`;
+    document.getElementById('cnt-compromis').textContent = `compromis : ${byType.compromis||0}`;
+    document.getElementById('cnt-rif').textContent = `rif : ${byType.rif||0}`;
+    // Recent docs
+    const recent = docs.slice(0,5);
+    const rdiv = document.getElementById('recent-docs-list');
+    if (recent.length === 0) {
+      rdiv.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg><div class="empty-state-title">Aucun document</div><div class="empty-state-sub">Les documents générés sur la plateforme apparaissent ici</div></div>`;
+    } else {
+      rdiv.innerHTML = recent.map(d => `
+        <div class="activity-item">
+          <div class="activity-icon" style="background:var(--green-l);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+          <div>
+            <div class="activity-text">${d.titre||'Sans titre'}</div>
+            <div class="activity-sub">${d.type||''} · ${d.user_phone||'—'}</div>
+          </div>
+          <div class="activity-time">${fmtDate(d.created_at)}</div>
+        </div>`).join('');
+    }
+  } catch(e) {
+    checkConn(false);
+    document.getElementById('kpi-docs').textContent = '—';
+  }
+
+  // Try vendors
+  try {
+    const v = await sbGet('bf_vendors', 'select=count');
+    document.getElementById('kpi-vendors').textContent = Array.isArray(v) ? (v[0]?.count ?? v.length) : '—';
+  } catch(e) {
+    document.getElementById('kpi-vendors').textContent = '⚠️';
+  }
+
+  // Try RIF
+  try {
+    const rif = await sbGet('bf_rif_requests', 'select=count');
+    const cnt = Array.isArray(rif) ? (rif[0]?.count ?? rif.length) : 0;
+    document.getElementById('kpi-rif').textContent = cnt;
+    document.getElementById('nb-rif').textContent = cnt;
+  } catch(e) {
+    document.getElementById('kpi-rif').textContent = '—';
+  }
+
+  // Try affiliates
+  try {
+    const af = await sbGet('bf_affiliates', 'select=count');
+    document.getElementById('kpi-affilies').textContent = Array.isArray(af) ? (af[0]?.count ?? af.length) : '—';
+  } catch(e) {
+    document.getElementById('kpi-affilies').textContent = '—';
+  }
+}
+
+// ══════════════════════════════════════════
+// DOCUMENTS
+// ══════════════════════════════════════════
+async function loadDocuments() {
+  const tbody = document.getElementById('docs-table-body');
+  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--slate);">Chargement…</td></tr>`;
+  try {
+    allDocs = await sbGet('bf_documents', 'select=*&order=created_at.desc&limit=500');
+    checkConn(true);
+    document.getElementById('nb-docs').textContent = allDocs.length;
+    renderDocs(allDocs);
+  } catch(e) {
+    checkConn(false);
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--red);">Erreur : ${e.message} — Vérifiez votre configuration Supabase.</td></tr>`;
+  }
+}
+
+function renderDocs(docs) {
+  const tbody = document.getElementById('docs-table-body');
+  const start = docsPage_ * PAGE_SIZE;
+  const page  = docs.slice(start, start + PAGE_SIZE);
+  document.getElementById('docs-count-label').textContent = `${docs.length} document${docs.length>1?'s':''} au total`;
+  document.getElementById('doc-prev').disabled = docsPage_ === 0;
+  document.getElementById('doc-next').disabled = start + PAGE_SIZE >= docs.length;
+
+  if (page.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--slate);">Aucun document trouvé.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = page.map(d => `
+    <tr>
+      <td><code style="font-size:.74rem;background:#f1f5f9;padding:2px 6px;border-radius:4px;">${(d.ref||d.id||'').slice(0,10)}</code></td>
+      <td><span class="badge ${typeBadge(d.type)}">${d.type||'—'}</span></td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.titre||'—'}</td>
+      <td><code style="font-size:.8rem;">${d.user_phone||'—'}</code></td>
+      <td>${d.montant ? fmtF(d.montant) : '<span style="color:var(--slate)">Gratuit</span>'}</td>
+      <td>${d.is_certified ? '<span class="badge badge-gold">✓ Certifié</span>' : '<span class="badge badge-slate">Non certifié</span>'}</td>
+      <td>${fmtDate(d.created_at)}</td>
+      <td style="display:flex;gap:.35rem;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="viewDoc('${d.id}')">Voir</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDoc('${d.id}')">✕</button>
+      </td>
+    </tr>`).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function filterDocs() {
+  docsPage_ = 0;
+  const q    = (document.getElementById('doc-search').value||'').toLowerCase();
+  const type = document.getElementById('doc-type-filter').value;
+  const cert = document.getElementById('doc-cert-filter').value;
+  const filtered = allDocs.filter(d => {
+    const matchQ    = !q || (d.titre||'').toLowerCase().includes(q) || (d.user_phone||'').includes(q) || (d.type||'').includes(q) || (d.ref||'').includes(q);
+    const matchType = !type || d.type === type;
+    const matchCert = !cert || String(d.is_certified) === cert;
+    return matchQ && matchType && matchCert;
+  });
+  renderDocs(filtered);
+}
+
+function docsPage(dir) {
+  docsPage_ = Math.max(0, docsPage_ + dir);
+  filterDocs();
+}
+
+function viewDoc(id) {
+  const d = allDocs.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('modal-doc-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:.75rem;font-size:.85rem;">
+      <div><strong>Réf.</strong> ${d.ref||d.id}</div>
+      <div><strong>Type</strong> <span class="badge ${typeBadge(d.type)}">${d.type}</span>${d.sous_type?' — '+d.sous_type:''}</div>
+      <div><strong>Titre</strong> ${d.titre||'—'}</div>
+      <div><strong>Téléphone</strong> <code>${d.user_phone||'—'}</code></div>
+      <div><strong>Montant</strong> ${d.montant ? fmtF(d.montant) : 'Gratuit'}</div>
+      <div><strong>Certifié</strong> ${d.is_certified?'✅ Oui':'❌ Non'}</div>
+      <div><strong>Créé le</strong> ${new Date(d.created_at).toLocaleString('fr-FR')}</div>
+      ${d.resume ? `<div><strong>Résumé</strong><br><div style="background:#f8fafc;padding:.6rem;border-radius:6px;font-size:.8rem;margin-top:.3rem;">${d.resume.slice(0,400)}${d.resume.length>400?'…':''}</div></div>` : ''}
+      ${d.parties ? `<div><strong>Parties</strong><br><pre style="background:#f8fafc;padding:.6rem;border-radius:6px;font-size:.75rem;overflow-x:auto;">${JSON.stringify(d.parties,null,2)}</pre></div>` : ''}
+    </div>`;
+  document.getElementById('modal-doc-delete-btn').onclick = () => { closeModal('modal-doc'); deleteDoc(id); };
+  document.getElementById('modal-doc').classList.add('open');
+}
+
+async function deleteDoc(id) {
+  if (!confirm('Supprimer définitivement ce document ?')) return;
+  try {
+    await sbDelete('bf_documents', `id=eq.${id}`);
+    allDocs = allDocs.filter(d => d.id !== id);
+    renderDocs(allDocs);
+    showToast('Document supprimé.', 'success');
+    logAction('delete_document', id, 'bf_documents');
+  } catch(e) { showToast('Erreur : '+e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════
+// VENDORS
+// ══════════════════════════════════════════
+async function loadVendors() {
+  const tbody = document.getElementById('vendors-table-body');
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:var(--slate);">Chargement…</td></tr>`;
+  try {
+    allVendors = await sbGet('bf_vendors', 'select=*&order=created_at.desc');
+    renderVendors(allVendors);
+    renderAbonnements(allVendors);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:var(--amber);">Table bf_vendors introuvable — exécutez le script SQL d'installation.<br><small style="color:var(--slate);">${e.message}</small></td></tr>`;
+  }
+}
+
+function renderVendors(vendors) {
+  const tbody = document.getElementById('vendors-table-body');
+  if (vendors.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--slate);">Aucun vendeur enregistré.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = vendors.map(v => `
+    <tr>
+      <td><code style="font-size:.82rem;">${v.phone||'—'}</code></td>
+      <td>${v.name||'<span style="color:var(--slate)">—</span>'}</td>
+      <td><span class="badge plan-${v.plan||'free'}">${(v.plan||'free').toUpperCase()}</span></td>
+      <td>${v.plan_expires_at ? fmtDate(v.plan_expires_at) : '<span style="color:var(--slate)">—</span>'}</td>
+      <td>${kycBadge(v.kyc_status)}</td>
+      <td>${fmtDate(v.created_at)}</td>
+      <td style="display:flex;gap:.35rem;">
+        <button class="btn btn-outline btn-sm" onclick="viewVendor('${v.id}')">Profil</button>
+        <button class="btn btn-danger btn-sm" onclick="suspendVendor('${v.id}','${v.phone}')">Suspendre</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterVendors() {
+  const q    = (document.getElementById('vendor-search').value||'').toLowerCase();
+  const plan = document.getElementById('vendor-plan-filter').value;
+  const f = allVendors.filter(v =>
+    (!q || (v.phone||'').includes(q) || (v.name||'').toLowerCase().includes(q)) &&
+    (!plan || v.plan === plan)
+  );
+  renderVendors(f);
+}
+
+function renderAbonnements(vendors) {
+  const counts = { free:0, solo:0, expert:0, elite:0 };
+  vendors.forEach(v => { counts[v.plan||'free'] = (counts[v.plan||'free']||0)+1; });
+  document.getElementById('cnt-plan-free').textContent   = counts.free;
+  document.getElementById('cnt-plan-solo').textContent   = counts.solo;
+  document.getElementById('cnt-plan-expert').textContent = counts.expert;
+  document.getElementById('cnt-plan-elite').textContent  = counts.elite;
+  document.getElementById('rev-solo').textContent    = fmtF(counts.solo * 25000) + '/mois';
+  document.getElementById('rev-expert').textContent  = fmtF(counts.expert * 50000) + '/mois';
+  document.getElementById('rev-elite').textContent   = fmtF(counts.elite * 75000) + '/mois';
+}
+
+function viewVendor(id) {
+  const v = allVendors.find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('modal-vendor-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:.75rem;font-size:.85rem;">
+      <div><strong>Téléphone</strong> <code>${v.phone}</code></div>
+      <div><strong>Nom</strong> ${v.name||'—'}</div>
+      <div><strong>Email</strong> ${v.email||'—'}</div>
+      <div><strong>Plan</strong> <span class="badge plan-${v.plan||'free'}">${(v.plan||'free').toUpperCase()}</span></div>
+      <div><strong>Expiration</strong> ${v.plan_expires_at ? new Date(v.plan_expires_at).toLocaleString('fr-FR') : '—'}</div>
+      <div><strong>KYC</strong> ${kycBadge(v.kyc_status)}</div>
+      <div><strong>Statut</strong> ${v.status==='suspended'?'<span class="badge badge-red">Suspendu</span>':'<span class="badge badge-green">Actif</span>'}</div>
+      <div><strong>Inscrit le</strong> ${new Date(v.created_at).toLocaleString('fr-FR')}</div>
+    </div>`;
+  document.getElementById('modal-vendor-suspend-btn').textContent = v.status==='suspended' ? 'Réactiver' : 'Suspendre';
+  document.getElementById('modal-vendor-suspend-btn').onclick = () => { closeModal('modal-vendor'); suspendVendor(id, v.phone); };
+  document.getElementById('modal-vendor').classList.add('open');
+}
+
+async function suspendVendor(id, phone) {
+  const v = allVendors.find(x => x.id === id);
+  const newStatus = (v && v.status === 'suspended') ? 'active' : 'suspended';
+  const label = newStatus === 'suspended' ? 'Suspendre' : 'Réactiver';
+  if (!confirm(`${label} le vendeur ${phone} ?`)) return;
+  try {
+    await sbPatch('bf_vendors', `id=eq.${id}`, { status: newStatus, updated_at: new Date().toISOString() });
+    if (v) v.status = newStatus;
+    renderVendors(allVendors);
+    showToast(`Vendeur ${newStatus === 'suspended' ? 'suspendu' : 'réactivé'}.`, 'success');
+  } catch(e) { showToast('Erreur : '+e.message, 'error'); }
+}
+
+async function overridePlan() {
+  const phone  = document.getElementById('plan-phone').value.trim();
+  const plan   = document.getElementById('plan-new').value;
+  const expiry = document.getElementById('plan-expiry').value;
+  if (!phone) { showToast('Téléphone requis.', 'warning'); return; }
+  try {
+    const body = { plan, plan_expires_at: expiry ? new Date(expiry).toISOString() : null, updated_at: new Date().toISOString() };
+    await sbPatch('bf_vendors', `phone=eq.${encodeURIComponent(phone)}`, body);
+    showToast(`Plan ${plan.toUpperCase()} appliqué à ${phone}.`, 'success');
+    logAction('override_plan', phone, 'bf_vendors', { plan, expiry });
+    loadVendors();
+  } catch(e) { showToast('Erreur : '+e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════
+// AFFILIATES
+// ══════════════════════════════════════════
+async function loadAffiliates() {
+  const tbody = document.getElementById('affiliates-table-body');
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:var(--slate);">Chargement…</td></tr>`;
+  try {
+    allAffiliates = await sbGet('bf_affiliates', 'select=*&order=created_at.desc');
+    renderAffiliates(allAffiliates);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:var(--amber);">Table bf_affiliates introuvable — exécutez le script SQL.<br><small>${e.message}</small></td></tr>`;
+  }
+}
+
+function renderAffiliates(af) {
+  const tbody = document.getElementById('affiliates-table-body');
+  if (af.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--slate);">Aucun affilié.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = af.map(a => `
+    <tr>
+      <td><code style="font-weight:800;">${a.code||'—'}</code></td>
+      <td><code>${a.phone||'—'}</code></td>
+      <td>${a.conversions||0}</td>
+      <td style="font-weight:700;color:var(--amber);">${fmtF(a.commission_pending||0)}</td>
+      <td style="color:var(--green);">${fmtF(a.commission_paid||0)}</td>
+      <td>${kycBadge(a.kyc_status)}</td>
+      <td>
+        <button class="btn btn-gold btn-sm" onclick="markCommissionPaidForCode('${a.code}','${a.commission_pending||0}')">Payer</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterAffiliates() {
+  const q = (document.getElementById('affil-search').value||'').toLowerCase();
+  const s = document.getElementById('affil-status-filter').value;
+  const f = allAffiliates.filter(a =>
+    (!q || (a.code||'').toLowerCase().includes(q) || (a.phone||'').includes(q)) &&
+    (!s || (s==='pending' && a.commission_pending>0) || (s==='paid' && a.commission_paid>0))
+  );
+  renderAffiliates(f);
+}
+
+async function markCommissionPaid() {
+  const code   = document.getElementById('affil-pay-code').value.trim();
+  const amount = parseInt(document.getElementById('affil-pay-amount').value);
+  if (!code || !amount) { showToast('Code et montant requis.', 'warning'); return; }
+  await markCommissionPaidForCode(code, amount);
+}
+
+async function markCommissionPaidForCode(code, amount) {
+  const af = allAffiliates.find(a => a.code === code);
+  if (!af) { showToast('Affilié introuvable.', 'error'); return; }
+  try {
+    await sbPatch('bf_affiliates', `code=eq.${code}`, {
+      commission_pending: 0,
+      commission_paid: (af.commission_paid||0) + parseInt(amount)
+    });
+    af.commission_paid = (af.commission_paid||0) + parseInt(amount);
+    af.commission_pending = 0;
+    renderAffiliates(allAffiliates);
+    showToast(`Commission ${fmtF(amount)} marquée payée pour ${code}.`, 'success');
+  } catch(e) { showToast('Erreur : '+e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════
+// RIF
+// ══════════════════════════════════════════
+async function loadRIF() {
+  const tbody = document.getElementById('rif-table-body');
+  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--slate);">Chargement…</td></tr>`;
+  try {
+    allRIF = await sbGet('bf_rif_requests', 'select=*&order=created_at.desc');
+    document.getElementById('nb-rif').textContent = allRIF.length;
+    renderRIF(allRIF);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--amber);">Table bf_rif_requests introuvable — exécutez le script SQL.<br><small>${e.message}</small></td></tr>`;
+  }
+}
+
+function renderRIF(rif) {
+  const tbody = document.getElementById('rif-table-body');
+  if (rif.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--slate);">Aucun dossier RIF.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rif.map(r => `
+    <tr>
+      <td><code>${(r.ref||r.id||'').slice(0,10)}</code></td>
+      <td>${r.type||'standard'}</td>
+      <td><code>${r.phone||'—'}</code></td>
+      <td>${r.zone||'—'} ${r.parcelle?'/ '+r.parcelle:''}</td>
+      <td>${r.montant ? fmtF(r.montant) : '—'}</td>
+      <td>${rifStatusBadge(r.status)}</td>
+      <td>${fmtDate(r.created_at)}</td>
+      <td><button class="btn btn-primary btn-sm" onclick="openRIFModal('${r.id}')">Mettre à jour</button></td>
+    </tr>`).join('');
+}
+
+function filterRIF() {
+  const q = (document.getElementById('rif-search').value||'').toLowerCase();
+  const s = document.getElementById('rif-status-filter').value;
+  const f = allRIF.filter(r =>
+    (!q || (r.ref||'').includes(q) || (r.phone||'').includes(q) || (r.zone||'').toLowerCase().includes(q)) &&
+    (!s || r.status === s)
+  );
+  renderRIF(f);
+}
+
+function openRIFModal(id) {
+  const r = allRIF.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('rif-edit-id').value = id;
+  document.getElementById('rif-new-status').value = r.status||'pending';
+  document.getElementById('rif-rapport-url').value = r.rapport_url||'';
+  document.getElementById('rif-notes').value = r.notes||'';
+  document.getElementById('modal-rif-status').classList.add('open');
+}
+
+async function saveRIFStatus() {
+  const id     = document.getElementById('rif-edit-id').value;
+  const status = document.getElementById('rif-new-status').value;
+  const url    = document.getElementById('rif-rapport-url').value;
+  const notes  = document.getElementById('rif-notes').value;
+  try {
+    await sbPatch('bf_rif_requests', `id=eq.${id}`, {
+      status, rapport_url: url||null, notes: notes||null,
+      updated_at: new Date().toISOString()
+    });
+    const r = allRIF.find(x => x.id === id);
+    if (r) { r.status = status; r.rapport_url = url; r.notes = notes; }
+    renderRIF(allRIF);
+    closeModal('modal-rif-status');
+    showToast('Dossier RIF mis à jour.', 'success');
+  } catch(e) { showToast('Erreur : '+e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════
+// BLOG
+// ══════════════════════════════════════════
+async function loadBlog() {
+  const tbody = document.getElementById('blog-table-body');
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--slate);">Chargement…</td></tr>`;
+  try {
+    allBlog = await sbGet('bf_blog', 'select=*&order=created_at.desc');
+    renderBlog(allBlog);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--amber);">Table bf_blog introuvable — exécutez le script SQL.<br><small>${e.message}</small></td></tr>`;
+  }
+}
+
+function renderBlog(articles) {
+  const tbody = document.getElementById('blog-table-body');
+  if (articles.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--slate);">Aucun article. Créez-en un.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = articles.map(a => `
+    <tr>
+      <td style="font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.titre||'—'}</td>
+      <td><span class="badge badge-navy">${a.categorie||'—'}</span></td>
+      <td>${a.auteur||'SIPI-AFRIK'}</td>
+      <td>${a.status==='published'?'<span class="badge badge-green">Publié</span>':'<span class="badge badge-slate">Brouillon</span>'}</td>
+      <td>${a.published_at ? fmtDate(a.published_at) : '—'}</td>
+      <td style="display:flex;gap:.35rem;">
+        <button class="btn btn-outline btn-sm" onclick="editBlog('${a.id}')">Éditer</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteBlog('${a.id}')">✕</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterBlog() {
+  const q = (document.getElementById('blog-search').value||'').toLowerCase();
+  const f = allBlog.filter(a => !q || (a.titre||'').toLowerCase().includes(q) || (a.categorie||'').includes(q));
+  renderBlog(f);
+}
+
+function openBlogModal(id) {
+  document.getElementById('blog-edit-id').value = '';
+  document.getElementById('blog-titre').value = '';
+  document.getElementById('blog-extrait').value = '';
+  document.getElementById('blog-contenu').value = '';
+  document.getElementById('blog-auteur').value = 'SIPI-AFRIK';
+  document.getElementById('blog-status').value = 'draft';
+  document.getElementById('blog-modal-title').textContent = 'Nouvel article';
+  document.getElementById('modal-blog').classList.add('open');
+}
+
+function editBlog(id) {
+  const a = allBlog.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('blog-edit-id').value   = id;
+  document.getElementById('blog-titre').value     = a.titre||'';
+  document.getElementById('blog-extrait').value   = a.extrait||'';
+  document.getElementById('blog-contenu').value   = a.contenu||'';
+  document.getElementById('blog-auteur').value    = a.auteur||'SIPI-AFRIK';
+  document.getElementById('blog-status').value    = a.status||'draft';
+  document.getElementById('blog-cat').value       = a.categorie||'actualite';
+  document.getElementById('blog-modal-title').textContent = 'Modifier l\'article';
+  document.getElementById('modal-blog').classList.add('open');
+}
+
+async function saveBlogArticle() {
+  const id      = document.getElementById('blog-edit-id').value;
+  const titre   = document.getElementById('blog-titre').value.trim();
+  const cat     = document.getElementById('blog-cat').value;
+  const extrait = document.getElementById('blog-extrait').value.trim();
+  const contenu = document.getElementById('blog-contenu').value.trim();
+  const auteur  = document.getElementById('blog-auteur').value.trim() || 'SIPI-AFRIK';
+  const status  = document.getElementById('blog-status').value;
+  if (!titre) { showToast('Le titre est obligatoire.', 'warning'); return; }
+  const body = {
+    titre, categorie: cat, extrait, contenu, auteur, status,
+    published_at: status==='published' ? new Date().toISOString() : null,
+    slug: titre.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''),
+    updated_at: new Date().toISOString()
+  };
+  try {
+    if (id) {
+      await sbPatch('bf_blog', `id=eq.${id}`, body);
+      const a = allBlog.find(x => x.id === id);
+      if (a) Object.assign(a, body);
+      showToast('Article mis à jour.', 'success');
+    } else {
+      const res = await sbPost('bf_blog', body);
+      if (Array.isArray(res) && res[0]) allBlog.unshift(res[0]);
+      showToast('Article créé.', 'success');
+    }
+    renderBlog(allBlog);
+    closeModal('modal-blog');
+  } catch(e) { showToast('Erreur : '+e.message, 'error'); }
+}
+
+async function deleteBlog(id) {
+  if (!confirm('Supprimer cet article définitivement ?')) return;
+  try {
+    await sbDelete('bf_blog', `id=eq.${id}`);
+    allBlog = allBlog.filter(a => a.id !== id);
+    renderBlog(allBlog);
+    showToast('Article supprimé.', 'success');
+  } catch(e) { showToast('Erreur : '+e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+function saveConfig() {
+  showToast('Configuration gérée via les constantes SUPABASE_URL / SUPABASE_ANON_KEY dans le code source.', 'warning');
+}
+
+function savePlatformConfig() {
+  showToast('Paramètres plateforme enregistrés en session.', 'success');
+}
+
+async function changeAdminPass() {
+  const p1 = document.getElementById('cfg-newpass').value;
+  const p2 = document.getElementById('cfg-newpass2').value;
+  if (!p1 || p1.length < 12) { showToast('Mot de passe trop court (12 caractères min.).', 'warning'); return; }
+  if (p1 !== p2) { showToast('Les mots de passe ne correspondent pas.', 'error'); return; }
+  try {
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) throw error;
+    document.getElementById('cfg-newpass').value = '';
+    document.getElementById('cfg-newpass2').value = '';
+    showToast('Mot de passe mis à jour via Supabase Auth.', 'success');
+  } catch(e) {
+    showToast('Erreur : ' + e.message, 'error');
+  }
+}
+
+function toggleThis(id) {
+  document.getElementById(id).classList.toggle('on');
+}
+
+// ══════════════════════════════════════════
+// AUDIT LOG
+// ══════════════════════════════════════════
+async function logAction(action, targetId, targetType, details) {
+  try {
+    await sbPost('bf_admin_log', { action, target_id: targetId, target_type: targetType, details: details||null });
+  } catch(e) { /* Table may not exist yet — silent fail */ }
+}
+
+// ══════════════════════════════════════════
+// SQL COPY
+// ══════════════════════════════════════════
+function copySQL(target) {
+  const idx = {'sql-profiles':0,'sql-vendors':1,'sql-affiliates':2,'sql-rif':3,'sql-blog':4,'sql-log':5};
+  const all = document.querySelectorAll('#panel-sql .sql-block');
+  const el = all[idx[target]];
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => showToast('SQL copié dans le presse-papiers.', 'success'));
+}
+
+// ══════════════════════════════════════════
+// REFRESH ALL
+// ══════════════════════════════════════════
+function refreshAll() {
+  loadDashboard();
+  showToast('Données actualisées.', 'success');
+}
+
+// ══════════════════════════════════════════
+// MODAL HELPERS
+// ══════════════════════════════════════════
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(mo => {
+  mo.addEventListener('click', e => { if (e.target === mo) mo.classList.remove('open'); });
+});
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3200);
+}
+
+// ══════════════════════════════════════════
+// FORMATTING HELPERS
+// ══════════════════════════════════════════
+function fmtDate(d) {
+  if (!d) return '—';
+  const date = new Date(d);
+  return date.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function fmtF(n) {
+  return Number(n).toLocaleString('fr-FR') + ' F';
+}
+function typeBadge(t) {
+  const m = { mandat:'badge-green', compromis:'badge-navy', rif:'badge-amber' };
+  return m[t] || 'badge-slate';
+}
+function kycBadge(s) {
+  const m = { verified:'<span class="badge badge-green">✓ Vérifié</span>', rejected:'<span class="badge badge-red">✗ Rejeté</span>', pending:'<span class="badge badge-amber">⏳ En attente</span>' };
+  return m[s] || '<span class="badge badge-slate">—</span>';
+}
+function rifStatusBadge(s) {
+  const m = { pending:'<span class="badge badge-amber">En attente</span>', processing:'<span class="badge badge-navy">En traitement</span>', done:'<span class="badge badge-green">Livré</span>' };
+  return m[s] || '<span class="badge badge-slate">—</span>';
+}
+</script>
+</body>
+</html>

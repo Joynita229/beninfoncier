@@ -1,0 +1,57 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# BÉNIN FONCIER — Cloudflare Pages _headers
+# Projet : beninfoncier.bj (plateforme principale v45)
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# AVANT DE DÉPLOYER — Désactiver dans Cloudflare Dashboard :
+#   Speed → Optimization → Rocket Loader       → OFF
+#   Speed → Optimization → Auto Minify JS/HTML → OFF
+#   (Ces deux options cassent les scripts inline des fichiers HTML monolithiques)
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+/*
+  # ── Clickjacking ─────────────────────────────────────────────────────────────
+  X-Frame-Options: DENY
+
+  # ── MIME sniffing ────────────────────────────────────────────────────────────
+  X-Content-Type-Options: nosniff
+
+  # ── HTTPS forcé 2 ans (Cloudflare enforce déjà HTTPS, HSTS renforce côté client)
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+  # ── Référents ────────────────────────────────────────────────────────────────
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # ── Permissions navigateur ───────────────────────────────────────────────────
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(self "https://app.fedapay.com")
+
+  # ── Content Security Policy ───────────────────────────────────────────────────
+  #
+  # Domaines autorisés (inventaire exhaustif v45) :
+  #   Scripts  : cdn.tailwindcss.com · cdn.jsdelivr.net · unpkg.com
+  #              cdn.fedapay.com · static.cloudflareinsights.com (CF Analytics)
+  #   Styles   : fonts.googleapis.com · cdn.tailwindcss.com · cdn.jsdelivr.net
+  #   Fonts    : fonts.gstatic.com
+  #   Connect  : *.supabase.co (REST + Auth + Storage + Edge Functions)
+  #              api.fedapay.com (API paiement)
+  #              app.fedapay.com (widget FedaPay)
+  #              wa.me (redirection WhatsApp)
+  #   Frames   : app.fedapay.com (widget paiement iframe)
+  #   Images   : data: (avatars base64) · *.supabase.co (Storage)
+  #
+  # Note 'unsafe-inline' : requis pour l'architecture monolithique single-file.
+  # À supprimer si migration vers des fichiers JS séparés.
+  #
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' cdn.tailwindcss.com cdn.jsdelivr.net unpkg.com cdn.fedapay.com static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdn.tailwindcss.com cdn.jsdelivr.net; font-src 'self' fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.fedapay.com https://app.fedapay.com https://wa.me; img-src 'self' data: blob: https://*.supabase.co https://storage.googleapis.com; frame-src https://app.fedapay.com; form-action 'self'; base-uri 'self'; upgrade-insecure-requests
+
+  # ── Cache HTML : toujours frais (Cloudflare CDN ne cache pas les HTML par défaut)
+  Cache-Control: no-cache, must-revalidate
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Assets statiques — mise en cache longue durée
+# (Si vous ajoutez des fichiers CSS/JS séparés dans /assets/)
+# ══════════════════════════════════════════════════════════════════════════════
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
